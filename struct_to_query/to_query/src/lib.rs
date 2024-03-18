@@ -24,16 +24,29 @@ fn do_expand(st: &syn::DeriveInput) -> Result<TokenStream> {
         let ident = &field.ident;
 
         eprintln!("=>{:?}", ident);
-        if is_optional(&field.ty) {
-            query_pieces.push(quote! {
-                    if !self.#ident.is_none() {
-                        if !query_string.is_empty() {
-                            query_string.push_str("&");
+        let is_optional = is_optional(&field.ty);
+        if is_optional.0 {
+            if is_optional.1.is_some() {
+                query_pieces.push(quote! {
+                        if !self.#ident.is_none() {
+                            if !query_string.is_empty() {
+                                query_string.push_str("&");
+                            }
+                            let str = format!("{}={:?}", stringify!(#ident),self.#ident.get_query());
+                            query_string.push_str(&str);
                         }
-                        let str = format!("{}={:?}", stringify!(#ident),self.#ident.unwrap());
-                        query_string.push_str(&str);
-                    }
-            });
+                });
+            } else {
+                query_pieces.push(quote! {
+                        if !self.#ident.is_none() {
+                            if !query_string.is_empty() {
+                                query_string.push_str("&");
+                            }
+                            let str = format!("{}={:?}", stringify!(#ident),self.#ident.unwrap());
+                            query_string.push_str(&str);
+                        }
+                });
+            }
         } else {
             query_pieces.push(quote! {
                     if !query_string.is_empty() {
@@ -73,16 +86,36 @@ fn get_fields_from_derive_input(d: &syn::DeriveInput) -> syn::Result<&StructFiel
     ))
 }
 
-//TODO: 需要判断field是否是可选的,如果是可选的需要判断是否是空
-fn is_optional(ty: &syn::Type) -> bool {
+fn is_optional(ty: &syn::Type) -> (bool, Option<&syn::Ident>) {
+    eprintln!("=> type {:?}", ty);
     // 模式匹配 外层是匹配的类型 （内部是解开到path的值, ..是忽略其他字段)
+    let mut res_bool = false;
+    let mut res_ident = None;
+
     if let syn::Type::Path(syn::TypePath { ref path, .. }) = ty {
         if let Some(seg) = path.segments.last() {
             if seg.ident == "Option" {
-                return true;
+                res_bool = true;
+                if let syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+                    ref args,
+                    ..
+                }) = seg.arguments
+                {
+                    if let Some(syn::GenericArgument::Type(syn::Type::Path(syn::TypePath {
+                        ref path,
+                        ..
+                    }))) = args.first()
+                    {
+
+                        eprintln!("=>Generic path {:?}", path);
+
+                        res_ident = Some(&path.segments.first().unwrap().ident);
+                    }
+                }
             }
         }
     }
-    eprintln!("{:?}", ty);
-    false
+    (res_bool, res_ident)
 }
+
+//TODO: 结构体中的结构体嵌套展开

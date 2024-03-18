@@ -5,19 +5,23 @@ struct HelloStruct {
     name: String,
     age: Option<u32>,
     money:u32,
-    // bank: Option<Bank>,
+    bank: Option<Bank>,
 }
-// #[derive(Debug,Clone,STQuery)]
-// struct Bank {
-//     name: String,
-//     number:Option<u32>,
-// }
+#[derive(Debug,Clone,STQuery)]
+struct Bank {
+    name: String,
+    number:Option<u32>,
+}
 
 fn main() {
     let h = HelloStruct {
         name:"".to_owned(),
-        age: None,
+        age: Some(32),
         money:0,
+        bank: Some(Bank {
+            name:"bank".to_owned(),
+            number:None,
+        }),
     };
     let t = h.get_query();
 
