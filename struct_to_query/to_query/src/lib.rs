@@ -1,7 +1,11 @@
+//! Structure to HTTP GET Query Parameters
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{self, spanned::Spanned, Result};
-
+/// STQuery created a function to quickly convert the struct into HTTP GET query parameters;
+/// By setting `use to_query::STQuery;` and tagging `#[derive(STQuery)]` onto the structure,
+/// a new function `get_query() -> String` is added to the structure,
+/// facilitating the generation of the query parameter string.
 #[proc_macro_derive(STQuery)]
 pub fn derive(input: TokenStream) -> TokenStream {
     let st = syn::parse_macro_input!(input as syn::DeriveInput);
@@ -37,7 +41,7 @@ fn do_expand(st: &syn::DeriveInput) -> Result<TokenStream> {
                     if !query_string.is_empty() {
                         query_string.push_str("&");
                     }
-                    let str = format!("{}={:?}", stringify!(#ident),self.#ident);
+                    let str = format!("{}={}", stringify!(#ident),self.#ident);
                     query_string.push_str(&str);
             });
         }
