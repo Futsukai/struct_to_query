@@ -1,8 +1,8 @@
 [package]
 name = "to_query"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
-authors = ["Kopasujin <Kopasujin@outlook.com>"]
+authors = ["Kopasujin <kopasujin@outlook.com>"]
 license = "MIT"
 repository = "https://github.com/Futsukai/struct_to_query.git"
 description = """
