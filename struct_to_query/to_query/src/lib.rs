@@ -13,40 +13,25 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
 fn do_expand(st: &syn::DeriveInput) -> Result<TokenStream> {
     let struct_ident = &st.ident;
-    eprintln!("{:?}", st.data);
-
     let fields = get_fields_from_derive_input(st)?;
-    // let idents: Vec<_> = fields.iter().map(|f| &f.ident).collect();
-
     let mut query_pieces = Vec::new();
     for idx in 0..fields.len() {
         let field = &fields[idx];
         let ident = &field.ident;
+        if is_optional(&field.ty) {
+            query_pieces.push(quote! {
+                    if !self.#ident.is_none() {
+                        if !query_string.is_empty() {
+                            query_string.push_str("&");
+                        }
 
-        eprintln!("=>{:?}", ident);
-        let is_optional = is_optional(&field.ty);
-        if is_optional.0 {
-            if is_optional.1.is_some() {
-                query_pieces.push(quote! {
-                        if !self.#ident.is_none() {
-                            if !query_string.is_empty() {
-                                query_string.push_str("&");
-                            }
-                            let str = format!("{}={:?}", stringify!(#ident),self.#ident.get_query());
-                            query_string.push_str(&str);
+                        let mut content = self.#ident.as_ref().unwrap().to_string();
+                        if !content.contains('=') {
+                            content = format!("{}={}", stringify!(#ident), content);
                         }
-                });
-            } else {
-                query_pieces.push(quote! {
-                        if !self.#ident.is_none() {
-                            if !query_string.is_empty() {
-                                query_string.push_str("&");
-                            }
-                            let str = format!("{}={:?}", stringify!(#ident),self.#ident.unwrap());
-                            query_string.push_str(&str);
-                        }
-                });
-            }
+                        query_string.push_str(&content);
+                    }
+            });
         } else {
             query_pieces.push(quote! {
                     if !query_string.is_empty() {
@@ -65,6 +50,12 @@ fn do_expand(st: &syn::DeriveInput) -> Result<TokenStream> {
                 let mut query_string = String::new();
                 #(#query_pieces)*
                 query_string.to_string()
+            }
+        }
+
+        impl std::fmt::Display for #builder_ident {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.get_query())
             }
         }
     );
@@ -86,36 +77,14 @@ fn get_fields_from_derive_input(d: &syn::DeriveInput) -> syn::Result<&StructFiel
     ))
 }
 
-fn is_optional(ty: &syn::Type) -> (bool, Option<&syn::Ident>) {
-    eprintln!("=> type {:?}", ty);
+fn is_optional(ty: &syn::Type) -> bool {
     // 模式匹配 外层是匹配的类型 （内部是解开到path的值, ..是忽略其他字段)
-    let mut res_bool = false;
-    let mut res_ident = None;
-
     if let syn::Type::Path(syn::TypePath { ref path, .. }) = ty {
         if let Some(seg) = path.segments.last() {
             if seg.ident == "Option" {
-                res_bool = true;
-                if let syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
-                    ref args,
-                    ..
-                }) = seg.arguments
-                {
-                    if let Some(syn::GenericArgument::Type(syn::Type::Path(syn::TypePath {
-                        ref path,
-                        ..
-                    }))) = args.first()
-                    {
-
-                        eprintln!("=>Generic path {:?}", path);
-
-                        res_ident = Some(&path.segments.first().unwrap().ident);
-                    }
-                }
+                return true;
             }
         }
     }
-    (res_bool, res_ident)
+    false
 }
-
-//TODO: 结构体中的结构体嵌套展开

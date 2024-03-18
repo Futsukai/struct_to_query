@@ -7,20 +7,20 @@ struct HelloStruct {
     money:u32,
     bank: Option<Bank>,
 }
-#[derive(Debug,Clone,STQuery)]
+#[derive(STQuery)]
 struct Bank {
-    name: String,
+    bank_name: String,
     number:Option<u32>,
 }
 
 fn main() {
     let h = HelloStruct {
-        name:"".to_owned(),
+        name:"name".to_owned(),
         age: Some(32),
         money:0,
         bank: Some(Bank {
-            name:"bank".to_owned(),
-            number:None,
+            bank_name:"bank".to_owned(),
+            number:Some(10001),
         }),
     };
     let t = h.get_query();
