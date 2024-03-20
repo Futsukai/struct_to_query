@@ -50,7 +50,7 @@ fn do_expand(st: &syn::DeriveInput) -> Result<TokenStream> {
     let builder_ident = syn::Ident::new(&struct_ident.to_string(), st.span());
     let ret = quote!(
         impl #builder_ident {
-            fn get_query(&self) -> String {
+           pub fn get_query(&self) -> String {
                 let mut query_string = String::new();
                 #(#query_pieces)*
                 query_string.to_string()
