@@ -6,6 +6,8 @@ struct HelloStruct {
     age: Option<u32>,
     money: u32,
     bank: Option<Bank>,
+    bank2: Bank,
+
 }
 #[derive(STQuery)]
 struct Bank {
@@ -20,8 +22,13 @@ fn single_struct_test() {
         age: None,
         money: 0,
         bank: None,
+        bank2: Bank{
+            bank_name: "abc".to_string(),
+            number: None,
+        },
     };
-    assert_eq!(object.get_http_query(), "name=hello&money=0")
+    assert_eq!(object.get_http_query(), "name=hello&money=0&bank_name=abc");
+    assert_eq!(object.get_sql_query(), "name=hello,money=0,bank_name=abc");
 }
 
 #[test]
@@ -34,10 +41,20 @@ fn inner_struct_test() {
             bank_name: "CoolBank".to_owned(),
             number: None,
         }),
+        bank2: Bank{
+            bank_name: "abc".to_string(),
+            number: None,
+        },
     };
-    assert_eq!(object.get_http_query(), "name=hello&money=0&bank_name=CoolBank")
+    assert_eq!(
+        object.get_http_query(),
+        "name=hello&money=0&bank_name=CoolBank&bank_name=abc"
+    );
+    assert_eq!(
+        object.get_sql_query(),
+        "name=hello,money=0,bank_name=CoolBank,bank_name=abc"
+    );
 }
-
 
 #[test]
 fn fill_struct_test() {
@@ -49,6 +66,27 @@ fn fill_struct_test() {
             bank_name: "CoolBank".to_owned(),
             number: Some(101),
         }),
+        bank2: Bank{
+            bank_name: "abc".to_string(),
+            number: None,
+        },
     };
-    assert_eq!(object.get_http_query(), "name=hello&age=123&money=0&bank_name=CoolBank&number=101")
+    assert_eq!(
+        object.get_http_query(),
+        "name=hello&age=123&money=0&bank_name=CoolBank&number=101&bank_name=abc"
+    );
+    assert_eq!(
+        object.get_sql_query(),
+        "name=hello,age=123,money=0,bank_name=CoolBank,number=101,bank_name=abc"
+    );
+
+    assert_eq!(
+        object.get_strings().get(2),
+        Some("money=0".to_string()).as_ref()
+    );
+
+    assert_eq!(
+        object.get_strings().last(),
+        Some("bank_name=abc".to_string()).as_ref()
+    );
 }

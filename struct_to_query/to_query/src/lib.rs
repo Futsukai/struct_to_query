@@ -26,19 +26,27 @@ fn do_expand(st: &syn::DeriveInput) -> Result<TokenStream> {
         if is_optional(&field.ty) {
             query_pieces.push(quote! {
                     if !self.#ident.is_none() {
+                        if !query_string.is_empty() {
+                            query_string.push_str("&");
+                        }
 
                         let mut content = self.#ident.as_ref().unwrap().to_string();
                         if !content.contains('=') {
                             content = format!("{}={}", stringify!(#ident), content);
                         }
-                        query_strings.push(content);
+                        query_string.push_str(&content);
                     }
             });
         } else {
             query_pieces.push(quote! {
-
-                    let str = format!("{}={}", stringify!(#ident),self.#ident);
-                    query_strings.push(str);
+                    if !query_string.is_empty() {
+                        query_string.push_str("&");
+                    }
+                    let mut content = self.#ident.to_string();
+                    if !content.contains('=') {
+                        content = format!("{}={}", stringify!(#ident), content);
+                    }
+                    query_string.push_str(&content);
             });
         }
     }
@@ -46,11 +54,14 @@ fn do_expand(st: &syn::DeriveInput) -> Result<TokenStream> {
     let builder_ident = syn::Ident::new(&struct_ident.to_string(), st.span());
     let ret = quote!(
         impl #builder_ident {
-            /// Obtain a list of strings in the format ['name=value'], for custom purposes.
-           pub fn get_strings(&self) -> Vec<String> {
-                let mut query_strings = Vec::new();
+           pub fn get_query(&self) -> String {
+                let mut query_string = String::new();
                 #(#query_pieces)*
-                query_strings
+                query_string.to_string()
+            }
+            /// Obtain a list of strings in the format ['name=value'], for custom purposes.
+            pub fn get_strings(&self) -> Vec<String> {
+                self.to_string().split('&').map(|str| str.to_string()).collect()
             }
 
             pub fn get_http_query(&self) -> String {
@@ -60,11 +71,11 @@ fn do_expand(st: &syn::DeriveInput) -> Result<TokenStream> {
             pub fn get_sql_query(&self) -> String {
                 self.get_strings().join(",")
             }
-        }
+            }
 
         impl std::fmt::Display for #builder_ident {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}", self.get_http_query())
+                write!(f, "{}", self.get_query())
             }
         }
     );
