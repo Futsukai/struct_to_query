@@ -1,12 +1,12 @@
 [package]
 name = "to_query"
-version = "0.5.2"
+version = "0.5.3"
 edition = "2021"
 authors = ["Kopasujin <kopasujin@outlook.com>"]
 license = "MIT"
 repository = "https://github.com/Futsukai/struct_to_query.git"
 description = """
-Structure to HTTP GET Query Parameters
+Structure to HTTP_GET/SQL Query Parameters
 """
 [lib]
 proc-macro = true

@@ -21,7 +21,7 @@ fn single_struct_test() {
         money: 0,
         bank: None,
     };
-    assert_eq!(object.get_query(), "name=hello&money=0")
+    assert_eq!(object.get_http_query(), "name=hello&money=0")
 }
 
 #[test]
@@ -35,7 +35,7 @@ fn inner_struct_test() {
             number: None,
         }),
     };
-    assert_eq!(object.get_query(), "name=hello&money=0&bank_name=CoolBank")
+    assert_eq!(object.get_http_query(), "name=hello&money=0&bank_name=CoolBank")
 }
 
 
@@ -50,5 +50,5 @@ fn fill_struct_test() {
             number: Some(101),
         }),
     };
-    assert_eq!(object.get_query(), "name=hello&age=123&money=0&bank_name=CoolBank&number=101")
+    assert_eq!(object.get_http_query(), "name=hello&age=123&money=0&bank_name=CoolBank&number=101")
 }
